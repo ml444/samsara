@@ -18,4 +18,6 @@
 go.sum
 .DS_store
 
+*.log
 # *_test.go
+*_test.go

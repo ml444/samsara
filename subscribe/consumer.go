@@ -1,27 +1,32 @@
 package subscribe
 
 import (
-	"fmt"
-	"github.com/ml444/samsara/core"
-	"os"
+	"github.com/ml444/samsara/entity"
+	"github.com/ml444/samsara/internal"
 )
 
+type Handler func(entity entity.IEntity)
+
 type SimpleSubscriber struct {
-	sequence *core.Sequence
-	barrier  core.ISubscribeBarrier
-	strategy core.ISubscriberStrategy
+	ISubscriber
+
+	sequence *internal.Sequence
+	barrier  internal.ISubscribeBarrier
+	strategy internal.ISubscriberStrategy
+	handler  Handler
 	isDone   bool
 }
 
-func NewSimpleSubscriber(scheduler core.IScheduler, strategy core.ISubscriberStrategy) *SimpleSubscriber {
-	seq := scheduler.InitConsumerSequence(0)
+func NewSimpleSubscriber(scheduler internal.IScheduler, strategy internal.ISubscriberStrategy, handler Handler) *SimpleSubscriber {
+	seq := scheduler.InitConsumerSequence(internal.SequenceInitValue)
 	return &SimpleSubscriber{
 		sequence: seq,
-		barrier:  core.NewSubscribeBarrier(scheduler, strategy),
+		barrier:  internal.NewSubscribeBarrier(scheduler, strategy),
+		handler:  handler,
 	}
 }
 
-func (s *SimpleSubscriber) GetSequence() *core.Sequence {
+func (s *SimpleSubscriber) GetSequence() *internal.Sequence {
 	return s.sequence
 }
 
@@ -30,47 +35,23 @@ func (s *SimpleSubscriber) GetBarrier() {
 }
 
 func (s *SimpleSubscriber) Start() {
-	fmt.Println("===> starting")
+	// TODO log
+	println("===> starting")
 	for !s.isDone {
 		nextSeq := s.sequence.Get() + 1
 		s.barrier.WaitFor(nextSeq)
-		seq := s.sequence.IncrementAndGet()
-		var e core.IEntity
+		var e entity.IEntity
 		for {
-			e = s.barrier.GetEntity(seq)
+			e = s.barrier.GetEntity(nextSeq)
 			if e != nil {
 				break
 			}
 		}
-		s.Handler(e)
+		s.sequence.Add(1)
+		s.handler(e)
 	}
 
 }
 func (s *SimpleSubscriber) Stop() {
 	s.isDone = true
-}
-
-func (s *SimpleSubscriber) Handler(entity core.IEntity) {
-	buf = append(buf, entity.DataByte()...)
-	if len(buf) > 2*1024 {
-		_, _ = DestFile.Write(buf)
-		buf = []byte{}
-	}
-}
-
-func FileFlush() {
-	DestFile.Write(buf)
-}
-
-var buf []byte
-var DestFile *os.File
-
-func init() {
-	var err error
-	path := "./log_test.log"
-	DestFile, err = os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-	if err != nil {
-		fmt.Printf("open file fail, path %s, err %s", path, err)
-		return
-	}
 }

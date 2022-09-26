@@ -1,10 +1,8 @@
 package entity
 
-import "github.com/ml444/samsara/core"
-
 type Entity struct {
 	//index int64
-	Data  []byte
+	Data []byte
 }
 
 func (e *Entity) DataByte() []byte {
@@ -14,6 +12,6 @@ func (e *Entity) DataByte() []byte {
 type FactoryEntity struct {
 }
 
-func (receiver *FactoryEntity) NewEntity() core.IEntity {
+func (receiver *FactoryEntity) NewEntity() IEntity {
 	return &Entity{}
 }
