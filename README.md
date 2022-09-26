@@ -1,2 +1,4 @@
 # samsara
-Golang implementation of LMAX Disruptor
+Golang's implementation of LMAX Disruptor
+
+
